@@ -1,0 +1,21 @@
+/* path: styles/tiles/tile-base.css */
+.tile[data-kind="base"] {
+  background: linear-gradient(180deg, #ffce7a 0%, #e27a24 60%, #7f3308 100%);
+  border-radius: 6px;
+  position: relative;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 -8px 12px rgba(0, 0, 0, 0.55);
+}
+.tile[data-kind="base"]::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, #fff5cc 0%, #f1a843 60%, #c46211 100%);
+  mask:
+    radial-gradient(circle at 50% 68%, rgba(0, 0, 0, 1) 0 40%, transparent 42%),
+    linear-gradient(90deg, rgba(0, 0, 0, 1) 49%, transparent 49%, transparent 51%, rgba(0, 0, 0, 1) 51%);
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.45);
+}

@@ -214,16 +214,11 @@ export class Game {
 
   computeMuzzlePosition(tank, bulletSize) {
     const halfTile = this.currentLevel.tileSize / 2;
-    const offset = halfTile - bulletSize / 2;
-    const baseX = tank.world.x;
-    const baseY = tank.world.y;
-
-    switch (tank.direction) {
-      case "up": return { x: baseX + offset, y: baseY - bulletSize / 2 };
-      case "down": return { x: baseX + offset, y: baseY + this.currentLevel.tileSize - bulletSize / 2 };
-      case "left": return { x: baseX - bulletSize / 2, y: baseY + offset };
-      case "right": default: return { x: baseX + this.currentLevel.tileSize - bulletSize / 2, y: baseY + offset };
-    }
+    const vector = DIRECTION_VECTORS[tank.direction] ?? DIRECTION_VECTORS.up;
+    const muzzleInset = Math.max(halfTile - bulletSize / 2 - 1, 0);
+    const baseX = tank.world.x + halfTile - bulletSize / 2 + vector.x * muzzleInset;
+    const baseY = tank.world.y + halfTile - bulletSize / 2 + vector.y * muzzleInset;
+    return { x: baseX, y: baseY };
   }
 
   onTankDestroyed(tank, killer) {

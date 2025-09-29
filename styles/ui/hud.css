@@ -1,0 +1,51 @@
+/* path: styles/ui/hud.css */
+.hud {
+  width: 240px;
+  background: var(--panel-bg);
+  padding: 22px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: relative;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+.hud::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(117, 179, 255, 0.12), transparent 70%);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.hud__section h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.hud__section ul {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--fg-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.hud__stats {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+  font-size: 14px;
+}
+.hud__stats dt {
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+.hud__stats dd {
+  margin: 2px 0 0;
+  color: var(--accent);
+  font-weight: 600;
+}

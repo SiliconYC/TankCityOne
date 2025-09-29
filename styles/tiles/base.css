@@ -1,0 +1,23 @@
+/* path: styles/tiles/base.css */
+.tile {
+  position: relative;
+  width: var(--tile-size);
+  height: var(--tile-size);
+  contain: strict;
+}
+.tile::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.tile[data-damage="1"]::after {
+  opacity: 0.35;
+}
+.tile[data-damage="2"]::after {
+  opacity: 0.65;
+}

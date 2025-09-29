@@ -1,0 +1,16 @@
+/* path: styles/tiles/tile-base-core.css */
+.tile[data-kind="base-core"] {
+  background: linear-gradient(180deg, #f9df68 0%, #f1a843 70%, #b85f0f 100%);
+  border-radius: 6px;
+  box-shadow:
+    0 0 14px rgba(255, 188, 60, 0.55),
+    inset 0 -6px 12px rgba(0, 0, 0, 0.35);
+}
+.tile[data-kind="base-core"]::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 170, 60, 0.4) 45%, transparent 70%);
+  opacity: 0.8;
+}

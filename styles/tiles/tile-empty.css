@@ -1,0 +1,4 @@
+/* path: styles/tiles/tile-empty.css */
+.tile[data-kind="empty"] {
+  background: linear-gradient(180deg, #0b121a 0%, #04080f 100%);
+}

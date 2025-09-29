@@ -1,0 +1,39 @@
+/* path: styles/tiles/tile-spawn.css */
+.tile[data-kind="spawn"] {
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.12) 0 4px, transparent 4px 7px),
+    linear-gradient(180deg, rgba(196, 105, 63, 0.3) 0%, rgba(73, 115, 255, 0.32) 100%);
+  border-radius: 5px;
+  animation: spawn-pulse 1.1s ease-in-out infinite;
+}
+.tile[data-kind="spawn"]::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 4px;
+  background: radial-gradient(circle, rgba(117, 179, 255, 0.35) 0%, transparent 65%);
+  animation: spawn-ring 1.1s ease-in-out infinite;
+}
+.tile[data-marker="spawn"] {
+  outline: 1px dashed rgba(117, 179, 255, 0.45);
+  outline-offset: -3px;
+  animation: spawn-pulse 1.2s ease-in-out infinite;
+}
+@keyframes spawn-pulse {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+@keyframes spawn-ring {
+  0%, 100% {
+    transform: scale(0.94);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 0.85;
+  }
+}

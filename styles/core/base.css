@@ -1,0 +1,62 @@
+/* path: styles/core/base.css */
+:root {
+  color-scheme: dark;
+  --tile-size: 24px;
+  --grid-cols: 26;
+  --grid-rows: 26;
+  --font-ui: "Segoe UI", "Microsoft YaHei", sans-serif;
+  --bg-primary: radial-gradient(circle at top, #1f2835 0%, #0c121a 65%);
+  --bg-secondary: linear-gradient(180deg, rgba(16, 23, 32, 0.94) 0%, rgba(12, 18, 27, 0.97) 100%);
+  --fg-primary: #f5f8ff;
+  --fg-muted: #9dadc6;
+  --accent: #ffb347;
+  --accent-strong: #ff8a47;
+  --accent-soft: rgba(255, 179, 71, 0.24);
+  --danger: #ff5d73;
+  --panel-bg: #111922dd;
+  --panel-border: rgba(255, 255, 255, 0.07);
+  --panel-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  --glow-border: rgba(117, 179, 255, 0.15);
+  --transition-fast: 0.18s ease-out;
+  --transition-slow: 0.32s ease;
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg-primary);
+  font-family: var(--font-ui);
+  color: var(--fg-primary);
+  line-height: 1.5;
+  position: relative;
+  overflow: hidden;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.06) 0%, transparent 60%),
+    radial-gradient(circle at 80% 10%, rgba(117, 179, 255, 0.16) 0%, transparent 65%);
+  filter: blur(60px);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: -2;
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(8, 12, 18, 0.72), transparent 75%);
+  pointer-events: none;
+  z-index: -1;
+}

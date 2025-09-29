@@ -1,0 +1,21 @@
+/* path: styles/tiles/tile-forest.css */
+.tile[data-kind="forest"] {
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.12) 0 16%, transparent 18%),
+    radial-gradient(circle at 68% 34%, rgba(255, 255, 255, 0.08) 0 20%, transparent 22%),
+    radial-gradient(circle at 40% 70%, rgba(25, 80, 55, 0.6) 0 32%, transparent 34%),
+    linear-gradient(145deg, #143924 0%, #274c38 100%);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45);
+  position: relative;
+}
+.tile[data-kind="forest"]::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.1) 0 18%, transparent 70%),
+    radial-gradient(circle at 70% 40%, rgba(255, 255, 255, 0.05) 0 22%, transparent 60%);
+  opacity: 0.4;
+}

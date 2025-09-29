@@ -1,0 +1,36 @@
+/* path: styles/entities/bullet.css */
+.bullet {
+  position: absolute;
+  width: calc(var(--tile-size) * 0.32);
+  height: calc(var(--tile-size) * 0.32);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 32% 32%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.4) 38%, transparent 60%),
+    linear-gradient(180deg, #ffe9b2 0%, #f59f3b 55%, #d75a12 100%);
+  box-shadow:
+    0 0 0 2px rgba(255, 180, 80, 0.18),
+    0 0 16px rgba(255, 179, 71, 0.85);
+  z-index: 30;
+  animation: bullet-glow 0.6s ease-in-out infinite alternate;
+}
+.bullet::before {
+  content: "";
+  position: absolute;
+  inset: 24% 60% 24% -55%;
+  background: linear-gradient(90deg, rgba(255, 199, 120, 0.4), transparent 80%);
+  filter: blur(2px);
+  border-radius: 999px;
+  opacity: 0.75;
+}
+@keyframes bullet-glow {
+  from {
+    box-shadow:
+      0 0 0 1px rgba(255, 180, 80, 0.16),
+      0 0 12px rgba(255, 179, 71, 0.7);
+  }
+  to {
+    box-shadow:
+      0 0 0 2px rgba(255, 210, 120, 0.24),
+      0 0 24px rgba(255, 200, 110, 0.95);
+  }
+}

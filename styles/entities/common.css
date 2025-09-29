@@ -1,0 +1,6 @@
+/* path: styles/entities/common.css */
+[data-entity] {
+  position: absolute;
+  pointer-events: none;
+  will-change: transform;
+}

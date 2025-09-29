@@ -22,7 +22,7 @@ export class PlayerController {
       }
     }
 
-    if (this.game.input.consume("fire")) {
+    if (this.game.input.isActive("fire")) {
       this.game.tryFire(player);
     }
 

@@ -1,0 +1,51 @@
+/* path: styles/ui/game-board.css */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 32px 32px;
+}
+.game-panel {
+  display: flex;
+  gap: 28px;
+  flex: 1;
+  align-items: stretch;
+}
+.game-surface {
+  position: relative;
+  width: calc(var(--tile-size) * var(--grid-cols));
+  height: calc(var(--tile-size) * var(--grid-rows));
+  background: #04080f;
+  border: 6px solid #0f1824;
+  border-radius: 12px;
+  display: grid;
+  grid-template-columns: repeat(var(--grid-cols), var(--tile-size));
+  grid-template-rows: repeat(var(--grid-rows), var(--tile-size));
+  box-shadow:
+    inset 0 0 14px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(117, 179, 255, 0.12);
+  overflow: hidden;
+}
+.game-surface::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background:
+    linear-gradient(90deg, rgba(20, 30, 45, 0.35) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(20, 30, 45, 0.35) 1px, transparent 1px);
+  background-size: var(--tile-size) var(--tile-size);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 1;
+}
+.game-surface::after {
+  content: "";
+  position: absolute;
+  inset: -14px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, rgba(255, 179, 71, 0.18), rgba(117, 179, 255, 0.18));
+  filter: blur(22px);
+  pointer-events: none;
+  z-index: -1;
+}

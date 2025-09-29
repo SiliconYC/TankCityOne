@@ -1,0 +1,62 @@
+/* path: styles/ui/shell.css */
+.app-shell {
+  width: min(1200px, 100%);
+  min-height: 680px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--panel-border);
+  border-radius: 18px;
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(18px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  isolation: isolate;
+}
+.app-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(117, 179, 255, 0.22), transparent 65%);
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: -1;
+}
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 32px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, rgba(22, 32, 46, 0.78), rgba(12, 18, 28, 0.65));
+}
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.brand__pill {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+}
+.brand__tagline {
+  font-size: 14px;
+  color: var(--fg-muted);
+  letter-spacing: 0.06em;
+}
+.top-bar__meta {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 14px;
+  color: var(--fg-muted);
+}
+.top-bar__meta strong {
+  color: var(--accent);
+  font-weight: 600;
+}

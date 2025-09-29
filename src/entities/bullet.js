@@ -11,7 +11,7 @@ export class Bullet {
     this.speed = speed; // tiles per second
     this.active = true;
     this.world = { x: 0, y: 0 };
-    this.size = tileSize * 0.35;
+    this.size = tileSize * 0.32;
     const vector = DIRECTION_VECTORS[direction] ?? DIRECTION_VECTORS.up;
     this.velocity = {
       x: vector.x * speed * tileSize,

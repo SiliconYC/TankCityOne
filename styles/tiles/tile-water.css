@@ -1,0 +1,34 @@
+/* path: styles/tiles/tile-water.css */
+.tile[data-kind="water"] {
+  background:
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.18) 0, transparent 32%),
+    radial-gradient(circle at 82% 20%, rgba(255, 255, 255, 0.12) 0, transparent 28%),
+    linear-gradient(160deg, #0f3a58 0%, #1d4d75 100%);
+  border-radius: 4px;
+  overflow: hidden;
+  animation: water-flow 4s ease-in-out infinite;
+}
+.tile[data-kind="water"]::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle, rgba(117, 179, 255, 0.16) 0%, transparent 60%);
+  animation: water-ripple 6s linear infinite;
+  opacity: 0.6;
+}
+@keyframes water-flow {
+  0%, 100% {
+    background-position: 0 0, 0 0, 0 0;
+  }
+  50% {
+    background-position: 6px -4px, -8px 6px, 0 0;
+  }
+}
+@keyframes water-ripple {
+  from {
+    transform: scale(0.8) rotate(0deg);
+  }
+  to {
+    transform: scale(1.1) rotate(360deg);
+  }
+}
