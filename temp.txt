@@ -1,0 +1,713 @@
+import { TileMap } from "./tilemap.js";
+import { Tank } from "../entities/tank.js";
+import { Bullet } from "../entities/bullet.js";
+import { Input } from "./input.js";
+import { ENEMY_TYPES } from "../data/enemies.js";
+
+const DIR_VECTORS = {
+  up: { x: 0, y: -1 },
+  down: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
+  right: { x: 1, y: 0 },
+};
+
+const PLAYER_STATS = {
+  speed: 3.4,
+  fireCooldown: 0.45,
+  bulletSpeed: 16,
+  hitPoints: 1,
+  maxBullets: 1,
+};
+
+const MAX_CONCURRENT_ENEMIES = 4;
+
+export class Game {
+  constructor({ root, levels, ui }) {
+    this.root = root;
+    this.levels = levels;
+    this.ui = ui;
+
+    this.input = new Input();
+
+    this.levelIndex = 0;
+    this.state = "idle";
+
+    this.tileMap = null;
+    this.player = null;
+    this.playerLives = 0;
+    this.respawnTimer = 0;
+
+    this.enemyQueue = [];
+    this.enemyPlanIndex = 0;
+    this.activeEnemies = [];
+
+    this.bullets = [];
+
+    this.score = 0;
+    this.updateScoreUI();
+
+    this.levelTime = 0;
+    this.lastFrame = 0;
+
+    this.nextAction = null;
+  }
+
+  init() {
+    if (!this.root) {
+      throw new Error("Game root element missing");
+    }
+
+    this.input.bind();
+    this.loadLevel(this.levelIndex);
+
+    this.state = "awaiting-start";
+    this.showOverlay({
+      title: "准备战斗",
+      body: "点击按钮或按回车键开始守护基地。",
+      button: "开始",
+    });
+  }
+
+  loadLevel(index) {
+    this.levelIndex = index;
+    const level = this.levels[index];
+    if (!level) {
+      throw new Error(`无法加载第 ${index + 1} 关`);
+    }
+    this.prepareLevel(level);
+  }
+
+  prepareLevel(level) {
+    this.currentLevel = level;
+
+    this.score = 0;
+    this.updateScoreUI();
+    this.levelTime = 0;
+    this.lastFrame = 0;
+
+    this.enemyQueue = Array.from(level.enemyPlan ?? []);
+    this.enemyPlanIndex = 0;
+    this.activeEnemies = [];
+
+    this.bullets.forEach((bullet) => bullet.destroy());
+    this.bullets = [];
+
+    this.playerLives = level.player?.lives ?? 3;
+    this.updateLivesUI();
+    this.updateEnemyCounter();
+
+    this.ui.stage.textContent = String(level.stage ?? this.levelIndex + 1);
+    this.ui.levelName.textContent = level.name ?? `Level ${this.levelIndex + 1}`;
+
+    const tileMap = new TileMap({
+      layout: level.layout,
+      tileSize: level.tileSize,
+      root: this.root,
+    });
+    tileMap.build();
+    tileMap.mount(this.root);
+    this.tileMap = tileMap;
+
+    for (const spawn of level.enemySpawns ?? []) {
+      const tile = this.tileMap.getTile(spawn.x, spawn.y);
+      if (tile) {
+        tile.el.dataset.marker = "spawn";
+      }
+    }
+
+    this.spawnPlayerImmediate();
+  }
+
+  spawnPlayerImmediate() {
+    if (!this.currentLevel?.player) {
+      return;
+    }
+    if (this.player) {
+      this.player.destroyNode();
+    }
+    const spawn = this.currentLevel.player.spawn ?? { x: 0, y: 0, facing: "up" };
+    this.player = new Tank({
+      faction: "player",
+      direction: spawn.facing ?? "up",
+      tileSize: this.currentLevel.tileSize,
+      ...PLAYER_STATS,
+    });
+    this.player.mount(this.root);
+    this.player.setTilePosition({ x: spawn.x, y: spawn.y });
+    this.respawnTimer = 0;
+  }
+
+  startLevel() {
+    if (this.state === "running") {
+      return;
+    }
+    this.hideOverlay();
+    this.state = "running";
+    this.levelTime = 0;
+    this.lastFrame = performance.now();
+    requestAnimationFrame(this.loop);
+  }
+
+  loop = (timestamp) => {
+    if (this.state !== "running") {
+      this.ui.fps.textContent = "--";
+      return;
+    }
+
+    const delta = (timestamp - this.lastFrame) / 1000;
+    this.lastFrame = timestamp;
+    this.levelTime += delta;
+
+    this.update(delta);
+
+    const fps = Math.round(1 / Math.max(delta, 0.0001));
+    this.ui.fps.textContent = String(Math.min(fps, 240));
+
+    this.input.clearFrameState();
+
+    if (this.state === "running") {
+      requestAnimationFrame(this.loop);
+    }
+  };
+
+  update(delta) {
+    if (this.input.consume("pause")) {
+      this.pause();
+      return;
+    }
+
+    this.handlePlayer(delta);
+    this.updateEnemies(delta);
+    this.updateBullets(delta);
+    this.processSpawns();
+    this.handleRespawn(delta);
+    this.checkVictoryCondition();
+  }
+
+  handlePlayer(delta) {
+    if (!this.player || this.player.isDestroyed) {
+      return;
+    }
+
+    const direction = this.resolveInputDirection();
+    if (direction) {
+      if (!this.player.isMoving()) {
+        this.tryMoveTank(this.player, direction);
+      } else {
+        this.player.setDirection(direction);
+      }
+    }
+
+    if (this.input.consume("fire")) {
+      this.tryFire(this.player);
+    }
+
+    this.player.update(delta);
+  }
+
+  resolveInputDirection() {
+    const priority = ["up", "left", "down", "right"];
+    for (const dir of priority) {
+      if (this.input.isActive(dir)) {
+        return dir;
+      }
+    }
+    return null;
+  }
+
+  tryMoveTank(tank, direction) {
+    const vector = DIR_VECTORS[direction];
+    if (!vector) {
+      return false;
+    }
+    const target = {
+      x: tank.tile.x + vector.x,
+      y: tank.tile.y + vector.y,
+    };
+    if (!this.isWithinBounds(target)) {
+      return false;
+    }
+    if (!this.tileMap.isPassable(target.x, target.y)) {
+      return false;
+    }
+    if (this.isTileOccupied(target.x, target.y, tank)) {
+      return false;
+    }
+    tank.beginMove(direction, target);
+    return true;
+  }
+
+  isWithinBounds({ x, y }) {
+    return x >= 0 && y >= 0 && x < this.tileMap.cols && y < this.tileMap.rows;
+  }
+
+  isTileOccupied(x, y, ignoreTank = null) {
+    const tanks = [];
+    if (this.player) {
+      tanks.push(this.player);
+    }
+    for (const enemy of this.activeEnemies) {
+      tanks.push(enemy.tank);
+    }
+    for (const tank of tanks) {
+      if (tank === ignoreTank) {
+        continue;
+      }
+      const occupied = [tank.tile];
+      if (tank.isMoving()) {
+        occupied.push(tank.targetTile);
+      }
+      if (occupied.some((pos) => pos.x === x && pos.y === y)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  tryFire(tank) {
+    if (!tank || tank.isDestroyed) {
+      return false;
+    }
+    if (!tank.requestFire()) {
+      return false;
+    }
+    const bullet = new Bullet({
+      owner: tank,
+      direction: tank.direction,
+      tileSize: this.currentLevel.tileSize,
+      speed: tank.bulletSpeed,
+    });
+    const position = this.computeMuzzlePosition(tank, bullet.size);
+    bullet.mount(this.root);
+    bullet.setPosition(position);
+    this.bullets.push(bullet);
+    return true;
+  }
+
+  computeMuzzlePosition(tank, bulletSize) {
+    const halfTile = this.currentLevel.tileSize / 2;
+    const offset = halfTile - bulletSize / 2;
+    const baseX = tank.world.x;
+    const baseY = tank.world.y;
+
+    switch (tank.direction) {
+      case "up":
+        return { x: baseX + offset, y: baseY - bulletSize / 2 };
+      case "down":
+        return { x: baseX + offset, y: baseY + this.currentLevel.tileSize - bulletSize / 2 };
+      case "left":
+        return { x: baseX - bulletSize / 2, y: baseY + offset };
+      case "right":
+      default:
+        return { x: baseX + this.currentLevel.tileSize - bulletSize / 2, y: baseY + offset };
+    }
+  }
+
+  updateBullets(delta) {
+    for (const bullet of this.bullets) {
+      if (!bullet.active) {
+        continue;
+      }
+      bullet.update(delta);
+      this.resolveBulletCollisions(bullet);
+    }
+    this.bullets = this.bullets.filter((bullet) => bullet.active);
+  }
+
+  resolveBulletCollisions(bullet) {
+    if (!bullet.active) {
+      return;
+    }
+
+    const bounds = bullet.getBounds();
+    const maxX = this.tileMap.cols * this.currentLevel.tileSize;
+    const maxY = this.tileMap.rows * this.currentLevel.tileSize;
+
+    if (bounds.right < 0 || bounds.left > maxX || bounds.bottom < 0 || bounds.top > maxY) {
+      bullet.destroy();
+      return;
+    }
+
+    const center = {
+      x: bounds.left + bullet.size / 2,
+      y: bounds.top + bullet.size / 2,
+    };
+    const tilePos = this.tileMap.worldToTile(center);
+    if (!this.isWithinBounds(tilePos)) {
+      bullet.destroy();
+      return;
+    }
+
+    if (this.tileMap.isBlockingForBullets(tilePos.x, tilePos.y)) {
+      const result = this.tileMap.damageTile(tilePos.x, tilePos.y);
+      bullet.destroy();
+      if (result === "base-destroyed") {
+        this.onBaseDestroyed();
+      }
+      return;
+    }
+
+    const targets = [];
+    if (this.player) {
+      targets.push(this.player);
+    }
+    for (const enemy of this.activeEnemies) {
+      targets.push(enemy.tank);
+    }
+
+    for (const tank of targets) {
+      if (!tank || tank === bullet.owner || tank.isDestroyed) {
+        continue;
+      }
+      if (this.intersectsTank(bounds, tank)) {
+        const fatal = tank.applyDamage(1);
+        bullet.destroy();
+        if (fatal) {
+          this.onTankDestroyed(tank, bullet.owner);
+        }
+        return;
+      }
+    }
+  }
+
+  intersectsTank(bounds, tank) {
+    const size = this.currentLevel.tileSize;
+    const tankBounds = {
+      left: tank.world.x,
+      right: tank.world.x + size,
+      top: tank.world.y,
+      bottom: tank.world.y + size,
+    };
+    return !(
+      bounds.right <= tankBounds.left ||
+      bounds.left >= tankBounds.right ||
+      bounds.bottom <= tankBounds.top ||
+      bounds.top >= tankBounds.bottom
+    );
+  }
+
+  updateEnemies(delta) {
+    for (const enemy of this.activeEnemies) {
+      const tank = enemy.tank;
+      tank.update(delta);
+
+      enemy.moveTimer -= delta;
+      enemy.shotTimer -= delta;
+
+      if (!tank.isMoving() || enemy.moveTimer <= 0) {
+        const direction = this.pickEnemyDirection(enemy);
+        if (direction) {
+          this.tryMoveTank(tank, direction);
+        }
+        enemy.moveTimer = 0.6 + Math.random() * 1.2;
+      }
+
+      if (enemy.shotTimer <= 0) {
+        if (this.tryFire(tank)) {
+          enemy.shotTimer = 1.2 + Math.random() * 1.5;
+        } else {
+          enemy.shotTimer = 0.3;
+        }
+      }
+
+      if (tank.isDestroyed) {
+        enemy.removalDelay -= delta;
+      }
+    }
+
+    const survivors = [];
+    for (const enemy of this.activeEnemies) {
+      if (enemy.tank.isDestroyed && enemy.removalDelay <= 0) {
+        enemy.tank.destroyNode();
+      } else {
+        survivors.push(enemy);
+      }
+    }
+    if (survivors.length !== this.activeEnemies.length) {
+      this.activeEnemies = survivors;
+      this.updateEnemyCounter();
+    }
+  }
+
+  pickEnemyDirection(enemy) {
+    const directions = ["up", "down", "left", "right"];
+    const candidates = directions.filter((dir) => {
+      const vector = DIR_VECTORS[dir];
+      const target = {
+        x: enemy.tank.tile.x + vector.x,
+        y: enemy.tank.tile.y + vector.y,
+      };
+      if (!this.isWithinBounds(target)) {
+        return false;
+      }
+      if (!this.tileMap.isPassable(target.x, target.y)) {
+        return false;
+      }
+      if (this.isTileOccupied(target.x, target.y, enemy.tank)) {
+        return false;
+      }
+      return true;
+    });
+
+    if (candidates.length === 0) {
+      return null;
+    }
+
+    const sameDirectionIndex = candidates.indexOf(enemy.tank.direction);
+    if (sameDirectionIndex !== -1 && Math.random() > 0.35) {
+      return enemy.tank.direction;
+    }
+
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  processSpawns() {
+    if (!this.currentLevel) {
+      return;
+    }
+
+    while (
+      this.enemyPlanIndex < this.enemyQueue.length &&
+      this.levelTime >= this.enemyQueue[this.enemyPlanIndex].time &&
+      this.activeEnemies.length < MAX_CONCURRENT_ENEMIES
+    ) {
+      const plan = this.enemyQueue[this.enemyPlanIndex];
+      if (this.spawnEnemy(plan)) {
+        this.enemyPlanIndex += 1;
+      } else {
+        break;
+      }
+    }
+
+    this.updateEnemyCounter();
+  }
+
+  spawnEnemy(plan) {
+    const spawnPoint = (this.currentLevel.enemySpawns ?? []).find((p) => p.id === plan.spawn) ??
+      this.currentLevel.enemySpawns?.[0];
+    if (!spawnPoint) {
+      return false;
+    }
+
+    if (this.isTileOccupied(spawnPoint.x, spawnPoint.y, null)) {
+      return false;
+    }
+
+    const stats = ENEMY_TYPES[plan.type] ?? ENEMY_TYPES.grunt;
+    const tank = new Tank({
+      faction: "enemy",
+      direction: "down",
+      tileSize: this.currentLevel.tileSize,
+      speed: stats.speed,
+      fireCooldown: stats.fireCooldown,
+      bulletSpeed: stats.bulletSpeed,
+      hitPoints: stats.hitPoints,
+      maxBullets: stats.maxBullets,
+    });
+    tank.mount(this.root);
+    tank.setTilePosition({ x: spawnPoint.x, y: spawnPoint.y });
+
+    this.activeEnemies.push({
+      id: plan.time,
+      type: plan.type,
+      tank,
+      moveTimer: 0,
+      shotTimer: 0.8 + Math.random() * 0.8,
+      removalDelay: 0.35,
+      score: stats.score ?? 100,
+    });
+
+    return true;
+  }
+
+  onTankDestroyed(tank, killer) {
+    if (this.player && tank === this.player) {
+      this.handlePlayerDestroyed();
+      return;
+    }
+
+    const index = this.activeEnemies.findIndex((enemy) => enemy.tank === tank);
+    if (index !== -1) {
+      const [enemy] = this.activeEnemies.splice(index, 1);
+      enemy.tank.destroyNode();
+      const killerFaction = killer?.faction ?? "unknown";
+      if (killerFaction === "player") {
+        this.score += enemy.score ?? 100;
+      }
+      this.updateScoreUI();
+      this.updateEnemyCounter();
+    }
+  }
+
+  handlePlayerDestroyed() {
+    this.playerLives = Math.max(0, this.playerLives - 1);
+    this.updateLivesUI();
+    if (this.player) {
+      this.player.destroyNode();
+      this.player = null;
+    }
+
+    if (this.playerLives <= 0) {
+      this.gameOver({
+        title: "任务失败",
+        body: "坦克全部损毁，基地失守。点击重试本关。",
+        button: "重试",
+        onConfirm: () => this.restartLevel(),
+      });
+    } else {
+      this.respawnTimer = 2.5;
+    }
+  }
+
+  handleRespawn(delta) {
+    if (this.player || this.playerLives <= 0) {
+      return;
+    }
+    this.respawnTimer -= delta;
+    if (this.respawnTimer <= 0) {
+      this.spawnPlayerImmediate();
+    }
+  }
+
+  checkVictoryCondition() {
+    const remainingPlanning = this.enemyQueue.length - this.enemyPlanIndex;
+    if (remainingPlanning > 0) {
+      return;
+    }
+    if (this.activeEnemies.length > 0) {
+      return;
+    }
+    if (this.state === "running") {
+      this.completeLevel();
+    }
+  }
+
+  completeLevel() {
+    this.state = "over";
+    const hasNext = this.levelIndex + 1 < this.levels.length;
+    const scoreLine = `当前积分：${this.score}`;
+    this.showOverlay({
+      title: "关卡完成",
+      body: hasNext
+        ? `敌军已被击退，准备迎接下一关。\n${scoreLine}`
+        : `恭喜！你击败了全部敌人。\n${scoreLine}`,
+      button: hasNext ? "下一关" : "重玩",
+    });
+    this.nextAction = hasNext
+      ? () => {
+          this.loadLevel(this.levelIndex + 1);
+          this.state = "awaiting-start";
+        }
+      : () => {
+          this.restartLevel();
+        };
+  }
+  updateEnemyCounter() {
+    const remainingPlanning = Math.max(0, this.enemyQueue.length - this.enemyPlanIndex);
+    const total = remainingPlanning + this.activeEnemies.length;
+    this.ui.enemies.textContent = String(total);
+  }
+
+  updateScoreUI() {
+    if (this.ui.score) {
+      this.ui.score.textContent = String(this.score);
+    }
+  }
+
+  updateLivesUI() {
+    this.ui.lives.textContent = String(this.playerLives);
+  }
+
+  onBaseDestroyed() {
+    this.gameOver({
+      title: "基地被摧毁",
+      body: "指挥部已被炸毁，任务失败。点击重试本关。",
+      button: "重试",
+      onConfirm: () => this.restartLevel(),
+    });
+  }
+
+  gameOver({ title, body, button, onConfirm }) {
+    if (this.state === "over") {
+      return;
+    }
+    this.state = "over";
+    const scoreLine = `当前积分：${this.score}`;
+    this.showOverlay({
+      title,
+      body: `${body}\n${scoreLine}`,
+      button: button ?? "重试",
+    });
+    this.nextAction = () => {
+      this.state = "awaiting-start";
+      onConfirm?.();
+    };
+  }
+
+  restartLevel() {
+    this.loadLevel(this.levelIndex);
+    this.state = "awaiting-start";
+  }
+
+  pause() {
+    if (this.state !== "running") {
+      return;
+    }
+    this.state = "paused";
+    this.showOverlay({
+      title: "已暂停",
+      body: "点击继续或按回车键恢复游戏。",
+      button: "继续",
+    });
+  }
+
+  resume() {
+    if (this.state !== "paused") {
+      return;
+    }
+    this.hideOverlay();
+    this.state = "running";
+    this.lastFrame = performance.now();
+    requestAnimationFrame(this.loop);
+  }
+
+  handleOverlayConfirm() {
+    if (this.state === "awaiting-start") {
+      this.startLevel();
+      return;
+    }
+
+    if (this.state === "paused") {
+      this.resume();
+      return;
+    }
+
+    if (this.state === "over" && this.nextAction) {\n      const action = this.nextAction;\n      this.nextAction = null;\n      action();\n      this.state = "awaiting-start";\n      this.showOverlay({
+        title: "准备战斗",
+        body: "点击按钮或按回车继续作战。",
+        button: "开始",
+      });
+    }
+  }
+
+  showOverlay({ title, body, button }) {
+    this.ui.overlayTitle.textContent = title;
+    this.ui.overlayBody.textContent = body;
+    this.ui.overlayButton.textContent = button ?? "继续";
+    this.ui.overlay.hidden = false;
+  }
+
+  hideOverlay() {
+    this.ui.overlay.hidden = true;
+  }
+}
+
+
+
+
+
+
+
+
+
+

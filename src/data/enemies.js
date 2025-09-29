@@ -1,0 +1,38 @@
+export const ENEMY_TYPES = {
+  grunt: {
+    label: "轻型",
+    speed: 2.6,
+    fireCooldown: 1.2,
+    bulletSpeed: 12,
+    hitPoints: 1,
+    maxBullets: 1,
+    score: 100,
+  },
+  scout: {
+    label: "侦察",
+    speed: 3.2,
+    fireCooldown: 0.9,
+    bulletSpeed: 13,
+    hitPoints: 1,
+    maxBullets: 1,
+    score: 150,
+  },
+  armor: {
+    label: "装甲",
+    speed: 2.1,
+    fireCooldown: 1.4,
+    bulletSpeed: 11,
+    hitPoints: 2,
+    maxBullets: 1,
+    score: 200,
+  },
+  heavy: {
+    label: "重炮",
+    speed: 1.6,
+    fireCooldown: 1.8,
+    bulletSpeed: 10,
+    hitPoints: 3,
+    maxBullets: 1,
+    score: 400,
+  },
+};

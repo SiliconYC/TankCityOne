@@ -1,0 +1,16 @@
+{
+  "name": "tankcityone",
+  "version": "1.0.0",
+  "description": "Tank City One 是一款运行在浏览器中的俯视视角坦克对战小游戏，灵感来自经典《Battle City》。所有单位与场景均由纯 CSS 绘制，无需图片素材。项目以数据驱动方式构建关卡，仅通过调整配置即可扩展地图与敌军脚本。",
+  "main": "index.js",
+  "scripts": {
+    "start": "serve -l 3000",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "serve": "^14.2.5"
+  }
+}

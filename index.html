@@ -1,0 +1,90 @@
+<!-- path: index.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tank City One · 纯 CSS 坦克大战</title>
+  <link rel="stylesheet" href="./styles/main.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="top-bar">
+      <div class="brand">
+        <span class="brand__pill">Tank City One</span>
+        <span class="brand__tagline">纯 CSS 经典坦克大战</span>
+      </div>
+      <div class="top-bar__meta">
+        <span class="meta__item" data-ui="level-name">Level 1</span>
+        <span class="meta__item">FPS <strong data-ui="fps">--</strong></span>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <section class="game-panel">
+        <div class="game-surface" id="game-root" role="presentation"></div>
+        <aside class="hud" aria-live="polite">
+          <div class="hud__section">
+            <h2>任务</h2>
+            <ul>
+              <li>保护基地</li>
+              <li>击败所有敌方坦克</li>
+            </ul>
+          </div>
+          <div class="hud__section">
+            <h2>状态</h2>
+            <dl class="hud__stats">
+              <div>
+                <dt>生命</dt>
+                <dd data-ui="lives">3</dd>
+              </div>
+              <div>
+                <dt>积分</dt>
+                <dd data-ui="score">0</dd>
+              </div>
+              <div>
+                <dt>剩余敌人</dt>
+                <dd data-ui="enemies">0</dd>
+              </div>
+              <div>
+                <dt>关卡</dt>
+                <dd data-ui="stage">1</dd>
+              </div>
+            </dl>
+          </div>
+          <div class="hud__section">
+            <h2>操作</h2>
+            <ul>
+              <li>方向键：移动</li>
+              <li>空格：开火</li>
+              <li>回车：暂停/继续</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div class="overlay" data-ui="overlay" hidden>
+    <div class="overlay__panel">
+      <h1 data-ui="overlay-title"></h1>
+      <p data-ui="overlay-body"></p>
+      <button type="button" data-ui="overlay-button">继续</button>
+    </div>
+  </div>
+
+  <template id="tank-template">
+    <div class="tank" data-entity="tank">
+      <span class="tank__body"></span>
+      <span class="tank__turret"></span>
+      <span class="tank__tracks"></span>
+    </div>
+  </template>
+
+  <template id="bullet-template">
+    <div class="bullet" data-entity="bullet"></div>
+  </template>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

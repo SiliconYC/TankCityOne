@@ -1,0 +1,113 @@
+const LEVEL_1_LAYOUT = [
+  "..S...S...S..",
+  "..S.......S..",
+  "..S.BB.BB.S..",
+  "....BB.BB....",
+  "BBB.......BBB",
+  "BBBWWWWWWWBBB",
+  "BBB.WWWWW.BBB",
+  "....FFFFF....",
+  "BBB.......BBB",
+  "...III.III...",
+  ".....B.B.....",
+  ".....B.B.....",
+  ".....BEB.....",
+];
+
+const LEVEL_2_LAYOUT = [
+  ".............",
+  ".SS.SS.SS.SS.",
+  ".S.........S.",
+  ".SBBBB.BBBBS.",
+  ".SB.......BS.",
+  ".SB.WWWWW.BS.",
+  "..B..WWW..B..",
+  "..B.FFFFF.B..",
+  ".FF.......FF.",
+  ".FF..III..FF.",
+  ".FF..III..FF.",
+  ".....S.S.....",
+  ".....SES.....",
+];
+
+function inferSize(layout) {
+  return {
+    cols: layout[0].length,
+    rows: layout.length,
+  };
+}
+
+export const levels = [
+  {
+    id: "level-1",
+    stage: 1,
+    name: "Level 1 · 城墙守卫",
+    description: "经典暖身战，砖墙与树林交错，考验玩家的基础操作与射击节奏。",
+    layout: LEVEL_1_LAYOUT,
+    size: inferSize(LEVEL_1_LAYOUT),
+    tileSize: 38,
+    player: {
+      lives: 3,
+      spawn: { x: 6, y: 11, facing: "up" },
+    },
+    base: { x: 6, y: 12 },
+    enemySpawns: [
+      { id: "north-west", x: 1, y: 0 },
+      { id: "north", x: 6, y: 0 },
+      { id: "north-east", x: 11, y: 0 },
+    ],
+    enemyPlan: [
+      { time: 0, type: "grunt", spawn: "north" },
+      { time: 4, type: "grunt", spawn: "north-west" },
+      { time: 9, type: "grunt", spawn: "north-east" },
+      { time: 15, type: "scout", spawn: "north" },
+      { time: 22, type: "scout", spawn: "north-west" },
+      { time: 30, type: "armor", spawn: "north-east" },
+      { time: 38, type: "grunt", spawn: "north" },
+      { time: 45, type: "scout", spawn: "north-east" },
+      { time: 52, type: "armor", spawn: "north-west" },
+      { time: 60, type: "grunt", spawn: "north" },
+      { time: 72, type: "grunt", spawn: "north-east" },
+      { time: 85, type: "armor", spawn: "north-west" },
+    ],
+    parTime: 120,
+    unlocks: ["level-2"],
+  },
+  {
+    id: "level-2",
+    stage: 2,
+    name: "Level 2 · 钢铁迷阵",
+    description: "钢板迷宫与水网交织，敌军火力升级，需要灵活破阵。",
+    layout: LEVEL_2_LAYOUT,
+    size: inferSize(LEVEL_2_LAYOUT),
+    tileSize: 38,
+    player: {
+      lives: 3,
+      spawn: { x: 6, y: 11, facing: "up" },
+    },
+    base: { x: 6, y: 12 },
+    enemySpawns: [
+      { id: "north-west", x: 1, y: 0 },
+      { id: "north", x: 6, y: 0 },
+      { id: "north-east", x: 11, y: 0 },
+    ],
+    enemyPlan: [
+      { time: 0, type: "scout", spawn: "north-west" },
+      { time: 5, type: "scout", spawn: "north-east" },
+      { time: 9, type: "grunt", spawn: "north" },
+      { time: 16, type: "grunt", spawn: "north-east" },
+      { time: 20, type: "armor", spawn: "north-west" },
+      { time: 28, type: "scout", spawn: "north" },
+      { time: 36, type: "armor", spawn: "north-east" },
+      { time: 42, type: "armor", spawn: "north-west" },
+      { time: 48, type: "heavy", spawn: "north" },
+      { time: 55, type: "heavy", spawn: "north-east" },
+      { time: 63, type: "scout", spawn: "north" },
+      { time: 74, type: "heavy", spawn: "north-west" },
+      { time: 86, type: "armor", spawn: "north" },
+      { time: 96, type: "heavy", spawn: "north-east" },
+    ],
+    parTime: 150,
+    unlocks: [],
+  },
+];
